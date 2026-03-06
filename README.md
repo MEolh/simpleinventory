@@ -15,10 +15,11 @@ A lightweight, self-hosted inventory management web app built with Python (Flask
 - **Zero dependencies** beyond Python stdlib + Flask + ReportLab
 
 ## Screenshots
-
-![Dashboard](screenshots/dashboard.png)
-![Items](screenshots/items.png)
-![Locations](screenshots/locations.png)
+<p>
+  <img src="screenshots/dashboard.png" width="30%" />
+  <img src="screenshots/items.png" width="30%" />
+  <img src="screenshots/locations.png" width="30%" />
+</p>
 
 ## Quick Start
 
