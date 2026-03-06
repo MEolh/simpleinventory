@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.db
+.env
+.DS_Store
+
+# If you put secrets in config.json, uncomment the line below
+# config.json

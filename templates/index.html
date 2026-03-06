@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SimpleInventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f8f9fc;
+  --surface:  #ffffff;
+  --surface2: #f0f4ff;
+  --border:   #e2e8f0;
+  --border2:  #cbd5e1;
+  --accent:   #3a86ff;
+  --accent2:  #e63946;
+  --accent3:  #2ec4b6;
+  --text:     #1e293b;
+  --text2:    #64748b;
+  --text3:    #94a3b8;
+  --yellow:   #f59e0b;
+  --mono:     'DM Mono', monospace;
+  --sans:     'DM Sans', sans-serif;
+  --radius:   8px;
+  --shadow:   0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow2:  0 4px 12px rgba(0,0,0,.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; }
+
+/* LAYOUT */
+.app { display: grid; grid-template-columns: 230px 1fr; grid-template-rows: 56px 1fr; min-height: 100vh; }
+header {
+  grid-column: 1/-1;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 24px; gap: 16px;
+  box-shadow: var(--shadow);
+}
+.logo { font-family: var(--mono); font-size: 17px; font-weight: 500; color: var(--accent); letter-spacing: -0.5px; }
+.logo span { color: var(--text2); }
+.header-stats { display: flex; gap: 24px; margin-left: auto; }
+.hstat { font-size: 12px; color: var(--text2); }
+.hstat b { color: var(--text); font-weight: 600; }
+
+nav { background: var(--surface); border-right: 1px solid var(--border); padding: 16px 0; }
+.nav-section { padding: 6px 16px 4px; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; font-family: var(--mono); }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; cursor: pointer; color: var(--text2); font-size: 13px; font-weight: 500; transition: all .12s; border-left: 2px solid transparent; margin: 1px 0; }
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(58,134,255,.06); }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; }
+.nav-sep { margin: 10px 16px; border: none; border-top: 1px solid var(--border); }
+
+main { padding: 28px; overflow-y: auto; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* PAGE HEADER */
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.page-title { font-size: 20px; font-weight: 600; color: var(--text); }
+.page-subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 14px; margin-bottom: 28px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+.stat-label { font-size: 11px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .5px; font-weight: 500; }
+.stat-value { font-size: 30px; font-family: var(--mono); font-weight: 500; margin-top: 6px; }
+.stat-value.blue   { color: var(--accent); }
+.stat-value.green  { color: var(--accent3); }
+.stat-value.red    { color: var(--accent2); }
+.stat-value.yellow { color: var(--yellow); }
+
+/* TOOLBAR */
+.toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.search-box { flex: 1; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 13px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none; box-shadow: var(--shadow); }
+.search-box:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(58,134,255,.12); }
+select.filter { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 12px; color: var(--text2); font-size: 13px; outline: none; cursor: pointer; box-shadow: var(--shadow); }
+select.filter:focus { border-color: var(--accent); }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .12s; font-family: var(--sans); }
+.btn-primary { background: var(--accent); color: white; box-shadow: 0 2px 6px rgba(58,134,255,.3); }
+.btn-primary:hover { background: #2979f5; box-shadow: 0 4px 10px rgba(58,134,255,.35); }
+.btn-danger { background: white; color: var(--accent2); border: 1px solid var(--accent2); }
+.btn-danger:hover { background: rgba(230,57,70,.06); }
+.btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.btn-ghost:hover { border-color: var(--border2); background: var(--surface2); }
+.btn-export { background: var(--surface); color: var(--accent3); border: 1px solid var(--accent3); }
+.btn-export:hover { background: rgba(46,196,182,.06); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+/* TABLE */
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; }
+thead { background: var(--surface2); }
+th { padding: 11px 14px; text-align: left; font-family: var(--mono); font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; font-weight: 500; border-bottom: 1px solid var(--border); }
+td { padding: 11px 14px; border-top: 1px solid var(--border); font-size: 13px; }
+tr:hover td { background: var(--surface2); }
+.empty-row { text-align: center; padding: 40px !important; color: var(--text3); font-family: var(--mono); font-size: 12px; }
+
+/* BADGES */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-family: var(--mono); font-size: 11px; font-weight: 500; }
+.badge-available { background: rgba(46,196,182,.1);  color: var(--accent3); border: 1px solid rgba(46,196,182,.3); }
+.badge-away      { background: rgba(245,158,11,.1);  color: var(--yellow);  border: 1px solid rgba(245,158,11,.3); }
+.badge-disposed  { background: rgba(230,57,70,.1);   color: var(--accent2); border: 1px solid rgba(230,57,70,.3); }
+.badge-group     { background: rgba(58,134,255,.1);  color: var(--accent);  border: 1px solid rgba(58,134,255,.2); }
+.badge-pos       { background: var(--surface2);      color: var(--text2);   border: 1px solid var(--border); }
+.badge-action    { background: var(--surface2);      color: var(--text2);   border: 1px solid var(--border); }
+
+.mono { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+.link { cursor: pointer; color: var(--accent); font-weight: 500; }
+.link:hover { text-decoration: underline; }
+
+/* LOCATION CARDS */
+.group-section { margin-bottom: 28px; }
+.group-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); }
+.group-title { font-size: 16px; font-weight: 600; color: var(--text); }
+.group-meta  { font-size: 12px; color: var(--text2); }
+.pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 10px; }
+.pos-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: all .12s; box-shadow: var(--shadow); }
+.pos-card:hover { border-color: var(--accent); box-shadow: 0 4px 14px rgba(58,134,255,.12); transform: translateY(-1px); }
+.pos-name  { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); }
+.pos-count { font-size: 26px; font-family: var(--mono); font-weight: 500; color: var(--accent); margin: 6px 0 2px; }
+.pos-desc  { font-size: 11px; color: var(--text3); }
+.pos-actions { display: flex; gap: 6px; margin-top: 10px; }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.4); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow2); }
+.modal-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 20px; }
+.form-row { margin-bottom: 14px; }
+label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+input[type=text], input[type=date], textarea, select.form-select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 9px 12px; color: var(--text); font-family: var(--mono); font-size: 13px; outline: none;
+}
+input[type=text]:focus, input[type=date]:focus, textarea:focus, select.form-select:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px rgba(58,134,255,.1);
+}
+textarea { resize: vertical; min-height: 70px; font-family: var(--sans); }
+.form-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* HISTORY */
+.history-list { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.history-item { display: flex; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border); align-items: flex-start; }
+.history-item:first-child { border-top: none; }
+.history-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
+.history-dot.checkout { background: var(--yellow); }
+.history-dot.dispose  { background: var(--accent2); }
+.history-dot.add      { background: var(--accent3); }
+.history-main { flex: 1; }
+.history-action { font-size: 13px; font-weight: 500; color: var(--text); }
+.history-meta   { font-size: 11px; color: var(--text2); font-family: var(--mono); margin-top: 2px; }
+.history-notes  { font-size: 12px; color: var(--text2); font-style: italic; margin-top: 3px; }
+
+/* NOTIFICATION */
+.notif { position: fixed; top: 16px; right: 16px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.notif-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; box-shadow: var(--shadow2); animation: slideIn .18s ease; max-width: 300px; }
+.notif-item.success { border-left: 3px solid var(--accent3); }
+.notif-item.error   { border-left: 3px solid var(--accent2); }
+@keyframes slideIn { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* SECTION LABEL */
+.section-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .6px; font-family: var(--mono); margin-bottom: 10px; margin-top: 4px; }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">Simple<span>Inventory</span></div>
+    <div class="header-stats" id="hstats"></div>
+  </header>
+
+  <nav>
+    <div class="nav-section">Views</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">◈</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('items',this)"><span class="nav-icon">☰</span> Items</div>
+    <div class="nav-item" onclick="showPage('locations',this)"><span class="nav-icon">⊞</span> Locations</div>
+    <div class="nav-item" onclick="showPage('log',this)"><span class="nav-icon">↕</span> Movement Log</div>
+    <hr class="nav-sep">
+    <div class="nav-section">Add</div>
+    <div class="nav-item" onclick="openModal('addItem')"><span class="nav-icon">+</span> New Item</div>
+    <div class="nav-item" onclick="openModal('addGroup')"><span class="nav-icon">+</span> New Group</div>
+    <div class="nav-item" onclick="openModal('addPosition')"><span class="nav-icon">+</span> New Position</div>
+  </nav>
+
+  <main>
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div><div class="page-title">Dashboard</div><div class="page-subtitle">Overview of your inventory</div></div>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div class="section-label">Recent movements</div>
+      <div class="table-wrap"><table id="recentTable">
+        <thead><tr><th>Date</th><th>Item</th><th>Action</th><th>From</th><th>To</th><th>Operator</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+
+    <!-- ITEMS -->
+    <div class="page" id="page-items">
+      <div class="page-header">
+        <div><div class="page-title">Items</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-export btn-sm" onclick="exportCSV('items')">↓ CSV</button>
+          <button class="btn btn-export btn-sm" onclick="exportItemsPDF()">↓ PDF</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addItem')">+ New Item</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input class="search-box" id="itemSearch" placeholder="Search by name, identifier..." oninput="loadItems()">
+        <select class="filter" id="itemGroupFilter" onchange="onGroupFilterChange()"><option value="">All groups</option></select>
+        <select class="filter" id="itemPosFilter" onchange="loadItems()"><option value="">All positions</option></select>
+        <select class="filter" id="itemStatusFilter" onchange="loadItems()">
+          <option value="">All statuses</option>
+          <option value="available">Available</option>
+          <option value="away">Away</option>
+          <option value="disposed">Disposed</option>
+        </select>
+      </div>
+      <div class="table-wrap"><table id="itemsTable">
+        <thead><tr><th>#</th><th>Name</th><th id="th-id1">ID 1</th><th id="th-id2">ID 2</th><th>Group</th><th>Position</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+
+    <!-- LOCATIONS -->
+    <div class="page" id="page-locations">
+      <div class="page-header">
+        <div><div class="page-title">Locations</div><div class="page-subtitle">Groups and positions</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="openModal('addGroup')">+ Group</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addPosition')">+ Position</button>
+        </div>
+      </div>
+      <div id="locationsContent"></div>
+    </div>
+
+    <!-- LOG -->
+    <div class="page" id="page-log">
+      <div class="page-header">
+        <div><div class="page-title">Movement Log</div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="date" id="log-from" class="search-box" style="width:145px;padding:8px 10px" onchange="loadLog()">
+          <span style="color:var(--text3);font-size:12px">→</span>
+          <input type="date" id="log-to" class="search-box" style="width:145px;padding:8px 10px" onchange="loadLog()">
+          <button class="btn btn-ghost btn-sm" onclick="clearLogDates()">✕</button>
+          <button class="btn btn-export btn-sm" onclick="exportCSV('movements')">↓ CSV</button>
+          <button class="btn btn-export btn-sm" onclick="exportMovPDF()">↓ PDF</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="logTable">
+        <thead><tr><th>Date</th><th>Item</th><th>ID 1</th><th>Action</th><th>From</th><th>To</th><th>Operator</th><th>Notes</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+  </main>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<!-- MODAL: Add Item -->
+<div class="modal-overlay" id="modal-addItem">
+  <div class="modal">
+    <div class="modal-title">New Item</div>
+    <div class="form-row"><label>Name *</label><input type="text" id="ai-name" placeholder="Item name or title"></div>
+    <div class="form-row-2">
+      <div class="form-row"><label id="lbl-id1">Identifier 1</label><input type="text" id="ai-id1" placeholder="optional"></div>
+      <div class="form-row"><label id="lbl-id2">Identifier 2</label><input type="text" id="ai-id2" placeholder="optional"></div>
+    </div>
+    <div class="form-row"><label>Group</label>
+      <select class="form-select" id="ai-group" onchange="populatePosSelect('ai-pos','ai-group')"><option value="">— none —</option></select>
+    </div>
+    <div class="form-row"><label>Position</label>
+      <select class="form-select" id="ai-pos"><option value="">— none —</option></select>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row"><label>Operator</label><input type="text" id="ai-op" placeholder="who is adding this"></div>
+      <div class="form-row"><label>Date</label><input type="date" id="ai-date"></div>
+    </div>
+    <div class="form-row"><label>Notes</label><textarea id="ai-notes" placeholder="optional notes"></textarea></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addItem')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddItem()">Add Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Group -->
+<div class="modal-overlay" id="modal-addGroup">
+  <div class="modal">
+    <div class="modal-title">New Group</div>
+    <div class="form-row"><label>Name *</label><input type="text" id="ag-name" placeholder="e.g. Living Room Shelf, Warehouse A"></div>
+    <div class="form-row"><label>Description</label><input type="text" id="ag-desc" placeholder="optional"></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addGroup')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddGroup()">Add Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Position -->
+<div class="modal-overlay" id="modal-addPosition">
+  <div class="modal">
+    <div class="modal-title">New Position</div>
+    <div class="form-row"><label>Group *</label>
+      <select class="form-select" id="ap-group"><option value="">— select group —</option></select>
+    </div>
+    <div class="form-row"><label>Position name *</label><input type="text" id="ap-name" placeholder="e.g. Shelf 1, Row A, Box 3"></div>
+    <div class="form-row"><label>Description</label><input type="text" id="ap-desc" placeholder="optional"></div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addPosition')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddPosition()">Add Position</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Item Detail -->
+<div class="modal-overlay" id="modal-itemDetail">
+  <div class="modal" style="width:580px">
+    <div class="modal-title" id="detail-title">Item Detail</div>
+    <div id="detail-info" style="margin-bottom:18px"></div>
+
+    <div style="margin-bottom:18px">
+      <div class="section-label">Record Movement</div>
+      <div class="form-row-2" style="margin-bottom:10px">
+        <div class="form-row"><label>Action</label>
+          <select class="form-select" id="mv-action">
+            <option value="move">Move to position</option>
+            <option value="checkout">Check out (away)</option>
+            <option value="checkin">Check in (return)</option>
+            <option value="dispose">Dispose</option>
+          </select>
+        </div>
+        <div class="form-row"><label>New position</label>
+          <select class="form-select" id="mv-group" onchange="populatePosSelect('mv-pos','mv-group')"><option value="">— none —</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Position</label>
+        <select class="form-select" id="mv-pos"><option value="">— none —</option></select>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row"><label>Operator</label><input type="text" id="mv-op" placeholder="name"></div>
+        <div class="form-row"><label>Date</label><input type="date" id="mv-date"></div>
+      </div>
+      <div class="form-row"><label>Notes</label><input type="text" id="mv-notes" placeholder="reason, ticket, reference..."></div>
+      <button class="btn btn-primary btn-sm" onclick="submitMove()">Save Movement</button>
+    </div>
+
+    <div>
+      <div class="section-label">History</div>
+      <div id="detail-history"></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('itemDetail')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let groups    = [];
+let positions = [];
+let cfg       = { app_name: 'SimpleInventory', id1_label: 'Identifier 1', id2_label: 'Identifier 2' };
+let currentItemId = null;
+
+// ── BOOT ───────────────────────────────────────────────────────────────────────
+async function boot() {
+  cfg = await api('/api/config');
+  document.title = cfg.app_name;
+  document.querySelector('.logo').innerHTML = cfg.app_name.replace('Simple','Simple<span>') + '</span>';
+  document.getElementById('th-id1').textContent = cfg.id1_label;
+  document.getElementById('th-id2').textContent = cfg.id2_label;
+  document.getElementById('lbl-id1').textContent = cfg.id1_label;
+  document.getElementById('lbl-id2').textContent = cfg.id2_label;
+  await refreshMeta();
+  loadDashboard();
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────────
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'dashboard')  loadDashboard();
+  if (name === 'items')      { loadItems(); }
+  if (name === 'locations')  loadLocations();
+  if (name === 'log')        loadLog();
+}
+
+// ── MODALS ─────────────────────────────────────────────────────────────────────
+function openModal(name) {
+  document.getElementById('modal-' + name).classList.add('open');
+  if (name === 'addItem') {
+    populateGroupSelect('ai-group');
+    document.getElementById('ai-date').value = todayISO();
+  }
+  if (name === 'addPosition') populateGroupSelect('ap-group');
+  if (name === 'itemDetail') {
+    populateGroupSelect('mv-group');
+    document.getElementById('mv-date').value = todayISO();
+  }
+}
+function closeModal(name) { document.getElementById('modal-' + name).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+// ── NOTIFY ─────────────────────────────────────────────────────────────────────
+function notify(msg, type = 'success') {
+  const c = document.getElementById('notif');
+  const el = document.createElement('div');
+  el.className = `notif-item ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ── API ────────────────────────────────────────────────────────────────────────
+async function api(url, method = 'GET', body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+}
+
+function todayISO() { return new Date().toISOString().split('T')[0]; }
+
+// ── META (groups + positions cache) ───────────────────────────────────────────
+async function refreshMeta() {
+  groups    = await api('/api/groups');
+  positions = await api('/api/positions');
+}
+
+function populateGroupSelect(id) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— none —</option>' +
+    groups.map(g => `<option value="${g.id}" ${cur==g.id?'selected':''}>${g.name}</option>`).join('');
+}
+
+async function populatePosSelect(posId, groupId) {
+  const gid = document.getElementById(groupId).value;
+  const sel = document.getElementById(posId);
+  const filtered = gid ? positions.filter(p => p.group_id == gid) : positions;
+  sel.innerHTML = '<option value="">— none —</option>' +
+    filtered.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+}
+
+// ── GROUPS ─────────────────────────────────────────────────────────────────────
+async function submitAddGroup() {
+  const name = document.getElementById('ag-name').value.trim();
+  const desc = document.getElementById('ag-desc').value.trim();
+  if (!name) { notify('Name is required', 'error'); return; }
+  const r = await api('/api/groups', 'POST', { name, description: desc });
+  if (r.error) { notify(r.error, 'error'); return; }
+  notify(`Group "${name}" added`);
+  closeModal('addGroup');
+  document.getElementById('ag-name').value = '';
+  document.getElementById('ag-desc').value = '';
+  await refreshMeta();
+  loadLocations();
+  loadStats();
+}
+
+async function delGroup(id) {
+  if (!confirm('Delete this group? All positions must be empty first.')) return;
+  const r = await api('/api/groups/' + id, 'DELETE');
+  if (r.error) { notify(r.error, 'error'); return; }
+  notify('Group deleted');
+  await refreshMeta();
+  loadLocations();
+}
+
+// ── POSITIONS ──────────────────────────────────────────────────────────────────
+async function submitAddPosition() {
+  const gid  = document.getElementById('ap-group').value;
+  const name = document.getElementById('ap-name').value.trim();
+  const desc = document.getElementById('ap-desc').value.trim();
+  if (!gid || !name) { notify('Group and name are required', 'error'); return; }
+  const r = await api('/api/positions', 'POST', { group_id: gid, name, description: desc });
+  if (r.error) { notify(r.error, 'error'); return; }
+  notify(`Position "${name}" added`);
+  closeModal('addPosition');
+  document.getElementById('ap-name').value = '';
+  document.getElementById('ap-desc').value = '';
+  await refreshMeta();
+  loadLocations();
+}
+
+async function delPosition(id) {
+  if (!confirm('Delete this position?')) return;
+  const r = await api('/api/positions/' + id, 'DELETE');
+  if (r.error) { notify(r.error, 'error'); return; }
+  notify('Position deleted');
+  await refreshMeta();
+  loadLocations();
+}
+
+function filterByPosition(posId, groupId) {
+  showPage('items', document.querySelector('.nav-item:nth-child(3)'));
+  document.getElementById('itemGroupFilter').value = groupId;
+  onGroupFilterChange(posId);
+}
+
+// ── ITEMS ──────────────────────────────────────────────────────────────────────
+async function loadItems() {
+  const q      = document.getElementById('itemSearch').value;
+  const grp    = document.getElementById('itemGroupFilter').value;
+  const pos    = document.getElementById('itemPosFilter').value;
+  const status = document.getElementById('itemStatusFilter').value;
+  const items  = await api(`/api/items?q=${encodeURIComponent(q)}&group_id=${grp}&position_id=${pos}&status=${status}`);
+  const tbody  = document.querySelector('#itemsTable tbody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">No items found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(i => `
+    <tr>
+      <td class="mono">${i.id}</td>
+      <td><span class="link" onclick="openDetail(${i.id})">${i.name}</span></td>
+      <td class="mono">${i.identifier1 || '<span style="color:var(--text3)">—</span>'}</td>
+      <td class="mono">${i.identifier2 || '<span style="color:var(--text3)">—</span>'}</td>
+      <td>${i.group_name ? `<span class="badge badge-group">${i.group_name}</span>` : '—'}</td>
+      <td>${i.position_name ? `<span class="badge badge-pos">${i.position_name}</span>` : '—'}</td>
+      <td><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openDetail(${i.id})">Detail</button></td>
+    </tr>
+  `).join('');
+}
+
+async function onGroupFilterChange(setPosId) {
+  const gid = document.getElementById('itemGroupFilter').value;
+  const sel = document.getElementById('itemPosFilter');
+  const filtered = gid ? positions.filter(p => p.group_id == gid) : positions;
+  sel.innerHTML = '<option value="">All positions</option>' +
+    filtered.map(p => `<option value="${p.id}" ${setPosId==p.id?'selected':''}>${p.name}</option>`).join('');
+  loadItems();
+}
+
+async function submitAddItem() {
+  const name = document.getElementById('ai-name').value.trim();
+  if (!name) { notify('Name is required', 'error'); return; }
+  const r = await api('/api/items', 'POST', {
+    name,
+    identifier1: document.getElementById('ai-id1').value.trim(),
+    identifier2: document.getElementById('ai-id2').value.trim(),
+    position_id: document.getElementById('ai-pos').value || null,
+    notes:    document.getElementById('ai-notes').value.trim(),
+    operator: document.getElementById('ai-op').value.trim(),
+    date:     document.getElementById('ai-date').value || todayISO()
+  });
+  if (r.error) { notify(r.error, 'error'); return; }
+  notify(`"${name}" added (ID: ${r.id})`);
+  closeModal('addItem');
+  ['ai-name','ai-id1','ai-id2','ai-notes','ai-op'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ai-date').value = todayISO();
+  loadItems();
+  loadStats();
+}
+
+// ── DETAIL ─────────────────────────────────────────────────────────────────────
+async function openDetail(id) {
+  currentItemId = id;
+  const data = await api('/api/items/' + id);
+  const i = data.item;
+  document.getElementById('detail-title').textContent = i.name;
+  document.getElementById('detail-info').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--surface2);border-radius:var(--radius);padding:14px">
+      <div><div class="section-label" style="margin:0 0 3px">${cfg.id1_label}</div><div class="mono" style="font-size:13px">${i.identifier1 || '—'}</div></div>
+      <div><div class="section-label" style="margin:0 0 3px">${cfg.id2_label}</div><div class="mono" style="font-size:13px">${i.identifier2 || '—'}</div></div>
+      <div><div class="section-label" style="margin:0 0 3px">Status</div><span class="badge badge-${i.status}">${statusLabel(i.status)}</span></div>
+      <div><div class="section-label" style="margin:0 0 3px">Location</div><span style="font-size:13px">${i.group_name ? i.group_name + ' › ' + i.position_name : '—'}</span></div>
+      ${i.notes ? `<div style="grid-column:1/-1"><div class="section-label" style="margin:0 0 3px">Notes</div><div style="font-size:12px;color:var(--text2)">${i.notes}</div></div>` : ''}
+    </div>
+  `;
+  populateGroupSelect('mv-group');
+  document.getElementById('mv-pos').innerHTML = '<option value="">— none —</option>';
+  document.getElementById('mv-date').value = todayISO();
+  document.getElementById('detail-history').innerHTML = data.history.length
+    ? `<div class="history-list">${data.history.map(h => `
+        <div class="history-item">
+          <div class="history-dot ${h.action}"></div>
+          <div class="history-main">
+            <div class="history-action">${actionLabel(h.action)}${h.to_group ? ' → ' + h.to_group + ' › ' + (h.to_pos||'') : ''}</div>
+            <div class="history-meta">${h.date}${h.operator ? ' · ' + h.operator : ''}${h.from_group ? ' · from: ' + h.from_group + (h.from_pos ? ' › '+h.from_pos : '') : ''}</div>
+            ${h.notes ? `<div class="history-notes">${h.notes}</div>` : ''}
+          </div>
+        </div>`).join('')}</div>`
+    : '<div style="color:var(--text3);font-size:12px;padding:12px">No movements recorded</div>';
+  openModal('itemDetail');
+}
+
+async function submitMove() {
+  const r = await api('/api/move', 'POST', {
+    item_id:     currentItemId,
+    to_position_id: document.getElementById('mv-pos').value || null,
+    action:   document.getElementById('mv-action').value,
+    operator: document.getElementById('mv-op').value,
+    notes:    document.getElementById('mv-notes').value,
+    date:     document.getElementById('mv-date').value || todayISO()
+  });
+  if (r.error) { notify(r.error, 'error'); return; }
+  notify('Movement saved');
+  openDetail(currentItemId);
+  loadStats();
+  if (document.getElementById('page-items').classList.contains('active')) loadItems();
+}
+
+// ── LOCATIONS ──────────────────────────────────────────────────────────────────
+async function loadLocations() {
+  const grps = await api('/api/groups');
+  const pos  = await api('/api/positions');
+  const el   = document.getElementById('locationsContent');
+  if (!grps.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-family:var(--mono);font-size:12px;padding:20px">No groups yet. Create one to get started.</div>';
+    return;
+  }
+  el.innerHTML = grps.map(g => {
+    const gpos = pos.filter(p => p.group_id === g.id);
+    return `
+      <div class="group-section">
+        <div class="group-header">
+          <div>
+            <div class="group-title">${g.name}</div>
+            <div class="group-meta">${g.description || ''} · ${gpos.length} positions · ${g.item_count} items</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="delGroup(${g.id})">Delete group</button>
+        </div>
+        ${gpos.length ? `
+        <div class="pos-grid">
+          ${gpos.map(p => `
+            <div class="pos-card" onclick="filterByPosition(${p.id},${g.id})">
+              <div class="pos-name">${p.name}</div>
+              <div class="pos-count">${p.item_count}</div>
+              <div class="pos-desc">${p.description || 'items'}</div>
+              <div class="pos-actions">
+                <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delPosition(${p.id})">Delete</button>
+              </div>
+            </div>`).join('')}
+        </div>` : '<div style="color:var(--text3);font-size:12px;font-family:var(--mono)">No positions in this group yet.</div>'}
+      </div>
+    `;
+  }).join('');
+}
+
+// ── LOG ────────────────────────────────────────────────────────────────────────
+async function loadLog() {
+  const from = document.getElementById('log-from').value;
+  const to   = document.getElementById('log-to').value;
+  const params = new URLSearchParams();
+  if (from) params.append('from', from);
+  if (to)   params.append('to', to);
+  const moves = await api('/api/movements' + (params.toString() ? '?' + params : ''));
+  const tbody = document.querySelector('#logTable tbody');
+  if (!moves.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-row">No movements found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = moves.map(m => `
+    <tr>
+      <td class="mono" style="font-size:11px;white-space:nowrap">${m.date}</td>
+      <td><span class="link" onclick="openDetail(${m.item_id})">${m.item_name}</span></td>
+      <td class="mono">${m.identifier1 || '—'}</td>
+      <td><span class="badge badge-action">${actionLabel(m.action)}</span></td>
+      <td style="font-size:12px">${m.from_group ? m.from_group + ' › ' + (m.from_pos||'') : '—'}</td>
+      <td style="font-size:12px">${m.to_group   ? m.to_group   + ' › ' + (m.to_pos  ||'') : '—'}</td>
+      <td>${m.operator || '—'}</td>
+      <td style="font-size:12px;color:var(--text2)">${m.notes || ''}</td>
+    </tr>
+  `).join('');
+}
+
+function clearLogDates() {
+  document.getElementById('log-from').value = '';
+  document.getElementById('log-to').value = '';
+  loadLog();
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  loadStats();
+  const moves = await api('/api/movements');
+  const tbody = document.querySelector('#recentTable tbody');
+  tbody.innerHTML = moves.slice(0,10).map(m => `
+    <tr>
+      <td class="mono" style="font-size:11px">${m.date}</td>
+      <td><span class="link" onclick="openDetail(${m.item_id})">${m.item_name}</span></td>
+      <td><span class="badge badge-action">${actionLabel(m.action)}</span></td>
+      <td style="font-size:12px">${m.from_group ? m.from_group + ' › ' + (m.from_pos||'') : '—'}</td>
+      <td style="font-size:12px">${m.to_group   ? m.to_group   + ' › ' + (m.to_pos  ||'') : '—'}</td>
+      <td>${m.operator || '—'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" class="empty-row">No movements yet</td></tr>';
+}
+
+async function loadStats() {
+  const s = await api('/api/stats');
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total items</div><div class="stat-value blue">${s.total}</div></div>
+    <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value green">${s.available}</div></div>
+    <div class="stat-card"><div class="stat-label">Away</div><div class="stat-value yellow">${s.away}</div></div>
+    <div class="stat-card"><div class="stat-label">Disposed</div><div class="stat-value red">${s.disposed}</div></div>
+    <div class="stat-card"><div class="stat-label">Groups</div><div class="stat-value">${s.groups}</div></div>
+    <div class="stat-card"><div class="stat-label">Positions</div><div class="stat-value">${s.positions}</div></div>
+    <div class="stat-card"><div class="stat-label">Moves (7d)</div><div class="stat-value blue">${s.recent_moves}</div></div>
+  `;
+  document.getElementById('hstats').innerHTML = `
+    <div class="hstat">Available: <b>${s.available}</b></div>
+    <div class="hstat">Away: <b>${s.away}</b></div>
+    <div class="hstat">Groups: <b>${s.groups}</b></div>
+  `;
+}
+
+// ── EXPORT ─────────────────────────────────────────────────────────────────────
+function exportCSV(type) {
+  const from = document.getElementById('log-from')?.value || '';
+  const to   = document.getElementById('log-to')?.value   || '';
+  let url = '/api/export/' + type;
+  if (type === 'movements' && (from || to))
+    url += '?' + new URLSearchParams({ from, to });
+  window.location.href = url;
+}
+function exportItemsPDF() { window.location.href = '/api/export/items/pdf'; }
+function exportMovPDF() {
+  const from = document.getElementById('log-from').value;
+  const to   = document.getElementById('log-to').value;
+  const p = new URLSearchParams();
+  if (from) p.append('from', from);
+  if (to)   p.append('to', to);
+  window.location.href = '/api/export/movements/pdf' + (p.toString() ? '?' + p : '');
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function statusLabel(s) {
+  return { available: 'Available', away: 'Away', disposed: 'Disposed' }[s] || s;
+}
+function actionLabel(a) {
+  return { add: 'Added', move: 'Moved', checkout: 'Checked out',
+           checkin: 'Checked in', dispose: 'Disposed' }[a] || a;
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
