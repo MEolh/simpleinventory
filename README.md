@@ -14,6 +14,12 @@ A lightweight, self-hosted inventory management web app built with Python (Flask
 - **Configurable labels** — rename identifier fields and app title via `config.json`
 - **Zero dependencies** beyond Python stdlib + Flask + ReportLab
 
+## Screenshots
+
+![Dashboard](screenshots/dashboard.png)
+![Items](screenshots/items.png)
+![Locations](screenshots/locations.png)
+
 ## Quick Start
 
 ```bash
